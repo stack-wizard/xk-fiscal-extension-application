@@ -49,7 +49,6 @@ namespace Mikos.XK.Fiscal
             //Add initialization code and hook up event handlers here
             this.OpsFinalTenderEvent += Application_FinalTenderEvent;
             this.OpsVoidClosedCheckEventPreview += Application_VoidClosedCheckEventPreview;
-            this.OpsSvcTotalEvent += Application_SvcTotalEvent;
             this.OpsWorkstationDownEvent += Application_WorkstationDownEvent;
             this.fiscalDataService = new FiscalDataService();
             racunkoUrlBase = FiscalConfigUtil.ReadServiceUrlBase(this.OpsContext, base.DataStore, ApplicationName);
@@ -99,31 +98,6 @@ namespace Mikos.XK.Fiscal
 
             }
             catch (System.Exception ex)
-            {
-                this.OpsContext.ShowMessage(ex.Message);
-            }
-
-            return EventProcessingInstruction.Continue;
-        }
-
-        private EventProcessingInstruction Application_SvcTotalEvent(object sender, OpsTmedEventArgs args)
-        {
-            try
-            {
-                if (!this.OpsContext.TrainingModeEnabled)
-                {
-                    FiscalRequestData invoice = FillFiscalRequestInitData(false);
-                    fiscalData = InitializeFiscalData();
-                    if (invoice != null)
-                    {
-                        var result = System.Threading.Tasks.Task.Run(async () => await sendInvoiceToRacunko(invoice)).Result;
-
-                        ProcessResult(result, invoice, 0, false, false);
-                    }
-                }
-
-            }
-            catch (Exception ex)
             {
                 this.OpsContext.ShowMessage(ex.Message);
             }
@@ -641,7 +615,6 @@ namespace Mikos.XK.Fiscal
         {
             base.OpsFinalTenderEvent -= Application_FinalTenderEvent;
             this.OpsVoidClosedCheckEventPreview -= Application_VoidClosedCheckEventPreview;
-            this.OpsSvcTotalEvent -= Application_SvcTotalEvent;
             this.OpsWorkstationDownEvent -= Application_WorkstationDownEvent;
             this.Destroy();
         }
