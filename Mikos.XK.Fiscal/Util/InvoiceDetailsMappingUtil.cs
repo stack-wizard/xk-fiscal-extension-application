@@ -59,8 +59,6 @@ namespace Mikos.XK.Fiscal.Util
                 trxNo = trxNo + "99";
             }
 
-            trxNo = formatTrxNo(trxNo);
-
             decimal grossAmount = isVoid ? decimal.Negate(Math.Round(item.Total, 2)) : Math.Round(item.Total, 2);
             decimal netAmount = isVoid ? decimal.Negate(item.Total - taxData.Total) : (item.Total - taxData.Total);
 
@@ -170,7 +168,7 @@ namespace Mikos.XK.Fiscal.Util
 
             string bucketValue = taxRateDetails.Code + "001|" + taxRateDetails.Code;
             string bucketDescription = $"Услуги {taxRateDetails.Percent}%";
-            var serviceChargeTrxNo = formatTrxNo(serviceChargeDetail.ObjectNumber.ToString());
+            var serviceChargeTrxNo = serviceChargeDetail.ObjectNumber.ToString();
             var existingServiceCharge = tempItemsList.postings.Find(posting => ItemAlreadyAdded(item, posting, int.Parse(serviceChargeTrxNo)));
             var existingVatCategory = tempItemsList.revenueBucketInfos.Find(revenueItem => revenueItem.BucketValue == bucketValue);
 
