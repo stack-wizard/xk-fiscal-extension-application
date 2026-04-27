@@ -391,7 +391,7 @@ namespace Mikos.XK.Fiscal.Dtos
 
     public class Posting
     {
-        public int TrxNo { get; set; }
+        public string TrxNo { get; set; }
         public string TrxCode { get; set; }
         public string TrxDate { get; set; }
         public string TrxType { get; set; }

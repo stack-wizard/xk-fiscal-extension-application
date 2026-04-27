@@ -261,7 +261,7 @@ namespace Mikos.XK.Fiscal
             };
             List<PaymentMethod> tenderMediaSettings = FiscalConfigUtil.GetTenderMediaSettings(this.OpsContext, base.DataStore, ApplicationName);
             List<TaxMapping> taxClassSettings = FiscalConfigUtil.GetTaxClassSettings(this.OpsContext, base.DataStore, ApplicationName);
-            Dictionary<int, int> itemTrxNoAgaintsMenuItemNo = new Dictionary<int, int>();
+            Dictionary<long, long> itemTrxNoAgaintsMenuItemNo = new Dictionary<long, long>();
 
             foreach (Micros.PosCore.Extensibility.Ops.CheckDetailItem item in OpsContext.CheckDetail.Where((Micros.PosCore.Extensibility.Ops.CheckDetailItem c) => !c.LineNumVoid))
             {

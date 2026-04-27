@@ -14,7 +14,7 @@ namespace Mikos.XK.Fiscal.Util
         public static ItemsPlaceholderObject MapItem(
             ItemsPlaceholderObject tempItemsList,
             CheckDetailItem item,
-            Dictionary<int, int> itemTrxNoAgaintsMenuItemNo,
+            Dictionary<long, long> itemTrxNoAgaintsMenuItemNo,
             List<TaxMapping> taxClassSettings,
             bool isVoid,
             string currency,
@@ -67,7 +67,7 @@ namespace Mikos.XK.Fiscal.Util
             {
                 Posting posting = new Posting()
                 {
-                    TrxNo = int.Parse(trxNo + item.DetailLink.ToString()),
+                    TrxNo = trxNo + item.DetailLink.ToString(),
                     TrxCode = trxNo + item.DetailLink.ToString(),
                     TrxDate = DateTime.Now.ToString("yyyy-MM-dd"),
                     TrxType = itemDetails != null ? "C" : "DSC%" + discountDetails.Percentage.ToString(),
@@ -107,7 +107,7 @@ namespace Mikos.XK.Fiscal.Util
             {
                 tempItemsList.postings.Add(new Posting()
                 {
-                    TrxNo = int.Parse(trxNo),
+                    TrxNo = trxNo,
                     TrxCode = trxNo,
                     TrxDate = DateTime.Now.ToString("yyyy-MM-dd"),
                     TrxType = itemDetails != null ? "C" : "DSC%" + discountDetails.Percentage.ToString(),
@@ -146,7 +146,7 @@ namespace Mikos.XK.Fiscal.Util
 
             if (itemDetails != null)
             {
-                itemTrxNoAgaintsMenuItemNo.Add(item.DetailLink, int.Parse(trxNo));
+                itemTrxNoAgaintsMenuItemNo.Add(item.DetailLink, long.Parse(trxNo));
             }
 
             return tempItemsList;
@@ -169,7 +169,7 @@ namespace Mikos.XK.Fiscal.Util
             string bucketValue = taxRateDetails.Code + "001|" + taxRateDetails.Code;
             string bucketDescription = $"Услуги {taxRateDetails.Percent}%";
             var serviceChargeTrxNo = serviceChargeDetail.ObjectNumber.ToString();
-            var existingServiceCharge = tempItemsList.postings.Find(posting => ItemAlreadyAdded(item, posting, int.Parse(serviceChargeTrxNo)));
+            var existingServiceCharge = tempItemsList.postings.Find(posting => ItemAlreadyAdded(item, posting, serviceChargeTrxNo));
             var existingVatCategory = tempItemsList.revenueBucketInfos.Find(revenueItem => revenueItem.BucketValue == bucketValue);
 
             decimal quantity = serviceChargeDetail != null ? (decimal)serviceChargeDetail.SalesCount : 0;
@@ -181,7 +181,7 @@ namespace Mikos.XK.Fiscal.Util
             {
                 tempItemsList.postings.Add(new Posting()
                 {
-                    TrxNo = int.Parse(serviceChargeTrxNo),
+                    TrxNo = serviceChargeTrxNo,
                     TrxCode = serviceChargeTrxNo,
                     TrxDate = DateTime.Now.ToString("yyyy-MM-dd"),
                     TrxType = "C",
@@ -355,9 +355,9 @@ namespace Mikos.XK.Fiscal.Util
             return false;
         }
 
-        private static bool ItemAlreadyAdded(CheckDetailItem item, Posting posting, int trxNo)
+        private static bool ItemAlreadyAdded(CheckDetailItem item, Posting posting, string trxNo)
         {
-            if (posting.TrxNo == trxNo)
+            if (posting.TrxNo.Equals(trxNo))
             {
                 decimal salesCount = item.SalesCount;
                 if (salesCount == 0.0m)
@@ -435,8 +435,8 @@ namespace Mikos.XK.Fiscal.Util
 
             foreach (var discount in discountPostings)
             {
-                var referencedIds = discount.Reference.Split(',').Select(int.Parse).ToList();
-                var referencedItems = itemPostings.Where(p => referencedIds.Contains(int.Parse(p.Generates.Generate[0].Reference))).ToList();
+                var referencedIds = discount.Reference.Split(',').Select(long.Parse).ToList();
+                var referencedItems = itemPostings.Where(p => referencedIds.Contains(long.Parse(p.Generates.Generate[0].Reference))).ToList();
 
                 decimal totalGross = referencedItems.Sum(p => p.GrossAmount);
                 if (totalGross == 0) continue;
