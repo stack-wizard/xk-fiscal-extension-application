@@ -67,5 +67,8 @@ namespace Mikos.XK.Fiscal.Datastore.Dao
         public string ResponseMessage { get; set; }
 
         public string Base64Request { get; set; }
+
+        [StringLength(20)]
+        public string TableNumber { get; set; }
     }
 }

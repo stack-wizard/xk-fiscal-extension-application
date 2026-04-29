@@ -45,6 +45,11 @@ namespace Mikos.XK.Fiscal.Services
                     }
                     FiscalInvoice fiscalInvoice = InvoiceMapper.ToFiscalInvoice(opsContext, fiscalData, result, existingFiscalInvoice, request, requestType, isVoid, cisConfiguration, employeeVatId);
 
+                    fiscalInvoice.TableNumber = opsContext.CheckTableName
+                        ?? (opsContext.CheckTableNumber > 0
+                            ? opsContext.CheckTableNumber.ToString()
+                            : null);
+
                     if (update)
                     {
                         fiscalInvoiceRepository.Update(fiscalInvoice);
