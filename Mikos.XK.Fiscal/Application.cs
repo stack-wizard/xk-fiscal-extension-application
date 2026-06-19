@@ -484,58 +484,108 @@ namespace Mikos.XK.Fiscal
 
         private void retransmitFiscalInvoice()
         {
-            using (FiscalContext fiscalContext = new FiscalContext())
-            {
-                IList<OpsSelectionEntry> list = (from fr in fiscalContext.FiscalInvoices.Where((FiscalInvoice m) => (m.Queued || m.Error) && !m.Void).ToList()
-                                                 select new OpsSelectionEntry(fr.Id, $"CHK#: {fr.CheckNumber} | {fr.RvcNumber}-{fr.WorkstationNumber} | {fr.SyncDateTime} | {fr.ChkGUID}")).ToList();
-                int? num = base.OpsContext.SelectionRequest("Retransmit invoices", "Select an invoice to retransmit:", list);
-                if (!num.HasValue)
-                {
-                    return;
-                }
-                OpsSelectionEntry opsSelectionEntry = list[Convert.ToInt32(num)];
-                long id = opsSelectionEntry.Number;
-                FiscalInvoice fiscalInvoice = fiscalDataService.retrieveFiscalInvoiceById(opsSelectionEntry.Number, this.OpsContext);
-
-                if (fiscalInvoice == null)
-                {
-                    return;
-                }
-
-                FiscalRequestData request = InvoiceMapper.ConvertBase64ToFiscalRequestData(fiscalInvoice.Base64Request);
-
-
-                var result = System.Threading.Tasks.Task.Run(async () => await sendInvoiceToRacunko(request)).Result;
-                ProcessResult(result, request, fiscalInvoice.Id, fiscalInvoice.Void, false);
-            }
+            RetransmitFromList(
+                voidInvoices: false,
+                searchTitle: "Retransmit invoices",
+                searchPrompt: "Search for an invoice to retransmit:");
         }
 
         private void retransmitCorrectiveInvoices()
         {
-            using (FiscalContext fiscalContext = new FiscalContext())
+            RetransmitFromList(
+                voidInvoices: true,
+                searchTitle: "Retransmit corrective invoices",
+                searchPrompt: "Search for a corrective invoice to retransmit:");
+        }
+
+        private void RetransmitFromList(bool voidInvoices, string searchTitle, string searchPrompt)
+        {
+            while (true)
             {
-                IList<OpsSelectionEntry> list = (from fr in fiscalContext.FiscalInvoices.Where((FiscalInvoice m) => (m.Queued || m.Error) && m.Void).ToList()
-                                                 select new OpsSelectionEntry(fr.Id, $"CHK#: {fr.CheckNumber} | {fr.RvcNumber}-{fr.WorkstationNumber} | {fr.SyncDateTime} | {fr.ChkGUID}")).ToList();
-                int? num = base.OpsContext.SelectionRequest("Retransmit corrective invoices", "Select a corrective invoice to retransmit:", list);
-                if (!num.HasValue)
+                FiscalInvoice fiscalInvoice;
+
+                using (FiscalContext fiscalContext = new FiscalContext())
                 {
-                    return;
+                    List<FiscalInvoice> invoices = fiscalContext.FiscalInvoices
+                        .Where(m => (m.Queued || m.Error) && m.Void == voidInvoices)
+                        .OrderByDescending(m => m.ChkClosedDateTime)
+                        .ToList();
+
+                    if (invoices.Count == 0)
+                    {
+                        base.OpsContext.ShowMessage("There are no invoices to retransmit.");
+                        return;
+                    }
+
+                    IList<OpsSelectionEntry> list = invoices
+                        .Select(fr => new OpsSelectionEntry(fr.Id, BuildSelectionEntryText(fr)))
+                        .ToList();
+
+                    int? num = base.OpsContext.SearchRequest(searchTitle, searchPrompt, list);
+
+                    if (!num.HasValue)
+                    {
+                        return;
+                    }
+
+                    OpsSelectionEntry selectedEntry = list[Convert.ToInt32(num)];
+                    fiscalInvoice = fiscalDataService.retrieveFiscalInvoiceById(
+                        selectedEntry.Number, this.OpsContext);
                 }
-                OpsSelectionEntry opsSelectionEntry = list[Convert.ToInt32(num)];
-                long id = opsSelectionEntry.Number;
-                FiscalInvoice fiscalInvoice = fiscalDataService.retrieveFiscalInvoiceById(opsSelectionEntry.Number, this.OpsContext);
 
                 if (fiscalInvoice == null)
                 {
-                    return;
+                    base.OpsContext.ShowError("Could not load the selected invoice. Please try again.");
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(fiscalInvoice.ChkGUID))
+                {
+                    OpsCommandUtil.ReprintCheckByGuid(this.OpsContext, fiscalInvoice.ChkGUID);
+                }
+
+                string question = BuildConfirmationQuestion(fiscalInvoice);
+                bool confirmed = base.OpsContext.AskQuestion(question);
+
+                if (!confirmed)
+                {
+                    continue;
                 }
 
                 FiscalRequestData request = InvoiceMapper.ConvertBase64ToFiscalRequestData(fiscalInvoice.Base64Request);
-
-
                 var result = System.Threading.Tasks.Task.Run(async () => await sendInvoiceToRacunko(request)).Result;
                 ProcessResult(result, request, fiscalInvoice.Id, fiscalInvoice.Void, false);
+                return;
             }
+        }
+
+        private string BuildSelectionEntryText(FiscalInvoice fr)
+        {
+            string tbl = string.IsNullOrEmpty(fr.TableNumber) ? "-" : fr.TableNumber;
+            string closedAt = fr.ChkClosedDateTime.HasValue
+                ? fr.ChkClosedDateTime.Value.ToString("yyyy-MM-dd HH:mm")
+                : "-";
+
+            return $"CHK#: {fr.CheckNumber} | TBL#: {tbl} | {closedAt} " +
+                   $"| {fr.PaymentMethod} {fr.PaymentTotal:F2} " +
+                   $"| {fr.RvcNumber}-{fr.WorkstationNumber} " +
+                   $"| {fr.ChkGUID}";
+        }
+
+        private string BuildConfirmationQuestion(FiscalInvoice invoice)
+        {
+            string tbl = string.IsNullOrEmpty(invoice.TableNumber) ? "-" : invoice.TableNumber;
+            string closedAt = invoice.ChkClosedDateTime.HasValue
+                ? invoice.ChkClosedDateTime.Value.ToString("yyyy-MM-dd HH:mm")
+                : "-";
+
+            return
+                "Retransmit this invoice?\n\n" +
+                $"Check #:   {invoice.CheckNumber}\n" +
+                $"Table #:   {tbl}\n" +
+                $"Closed:    {closedAt}\n" +
+                $"Payment:   {invoice.PaymentMethod} {invoice.PaymentTotal:F2}\n" +
+                $"RVC / WS:  {invoice.RvcNumber} / {invoice.WorkstationNumber}";
         }
 
         private RetransmitType getTypeFromArgs(object args)

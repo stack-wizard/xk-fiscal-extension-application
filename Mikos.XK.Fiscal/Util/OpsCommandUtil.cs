@@ -54,5 +54,16 @@ namespace Mikos.XK.Fiscal.Util
 
             opsContext.ProcessCommand(command);
         }
+
+        public static void ReprintCheckByGuid(OpsContext opsContext, string chkGuid)
+        {
+            if (string.IsNullOrWhiteSpace(chkGuid)) return;
+
+            var cmd = new OpsCommand(OpsCommandType.ReprintClosedCheckByGuid)
+            {
+                Data = chkGuid.Trim()
+            };
+            opsContext.ProcessCommand(cmd);
+        }
     }
 }
