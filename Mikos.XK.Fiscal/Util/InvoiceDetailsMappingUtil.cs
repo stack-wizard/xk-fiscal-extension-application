@@ -167,7 +167,7 @@ namespace Mikos.XK.Fiscal.Util
             bool taxExempt = IsTaxExempt(item);
 
             string bucketValue = taxRateDetails.Code + "001|" + taxRateDetails.Code;
-            string bucketDescription = $"Услуги {taxRateDetails.Percent}%";
+            string bucketDescription = $"Shërbime {taxRateDetails.Percent}%";
             var serviceChargeTrxNo = serviceChargeDetail.ObjectNumber.ToString();
             var existingServiceCharge = tempItemsList.postings.Find(posting => ItemAlreadyAdded(item, posting, serviceChargeTrxNo));
             var existingVatCategory = tempItemsList.revenueBucketInfos.Find(revenueItem => revenueItem.BucketValue == bucketValue);
