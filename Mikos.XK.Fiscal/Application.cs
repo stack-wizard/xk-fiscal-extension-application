@@ -46,6 +46,9 @@ namespace Mikos.XK.Fiscal
         public Application(IExecutionContext context)
             : base(context)
         {
+            FiscalDatabaseSettings databaseSettings = FiscalConfigUtil.ReadFiscalDatabaseSettings(this.OpsContext, base.DataStore, ApplicationName);
+            FiscalConnectionFactory.Configure(databaseSettings);
+
             //Add initialization code and hook up event handlers here
             this.OpsFinalTenderEvent += Application_FinalTenderEvent;
             this.OpsVoidClosedCheckEventPreview += Application_VoidClosedCheckEventPreview;

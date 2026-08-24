@@ -1,4 +1,5 @@
 ﻿using System.Data.Entity.Migrations;
+using MySql.Data.EntityFramework;
 
 namespace Mikos.XK.Fiscal.Migrations
 {
@@ -8,6 +9,7 @@ namespace Mikos.XK.Fiscal.Migrations
         {
             base.AutomaticMigrationsEnabled = true;
             base.AutomaticMigrationDataLossAllowed = true;
+            SetSqlGenerator("MySql.Data.MySqlClient", new MySqlMigrationSqlGenerator());
         }
 
         protected override void Seed(FiscalContext context)
