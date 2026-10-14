@@ -397,5 +397,45 @@ namespace Mikos.XK.Fiscal.Util
                 return result;
             }
         }
+
+        public static FiscalDatabaseSettings ReadFiscalDatabaseSettings(OpsContext opsContext, DataStoreClient dataStore, string ApplicationName)
+        {
+            try
+            {
+                IEnumerable<XElement> enumerable = from item in XDocument.Parse(dataStore.ReadExtensionApplicationContentTextByNameKey(opsContext.RvcID, ApplicationName, "FiscalConfig")).Descendants("database")
+                                                   select (item);
+
+                FiscalDatabaseSettings settings = new FiscalDatabaseSettings();
+                foreach (XElement item in enumerable)
+                {
+                    string provider = item?.Element("provider")?.Value?.Trim();
+                    if (!string.IsNullOrEmpty(provider))
+                    {
+                        settings.Provider = provider;
+                    }
+
+                    settings.Username = item?.Element("username")?.Value?.Trim();
+                    if (string.IsNullOrEmpty(settings.Username))
+                    {
+                        settings.Username = item?.Element("user")?.Value?.Trim();
+                    }
+
+                    settings.Password = item?.Element("password")?.Value?.Trim();
+                    settings.Host = item?.Element("host")?.Value?.Trim();
+
+                    string portValue = item?.Element("port")?.Value?.Trim();
+                    if (int.TryParse(portValue, out int port) && port > 0)
+                    {
+                        settings.Port = port;
+                    }
+                }
+
+                return settings;
+            }
+            catch (Exception ex)
+            {
+                return new FiscalDatabaseSettings();
+            }
+        }
     }
 }
