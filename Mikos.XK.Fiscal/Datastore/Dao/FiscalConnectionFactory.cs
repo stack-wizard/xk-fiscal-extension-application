@@ -9,7 +9,7 @@ namespace Mikos.XK.Fiscal.Datastore.Dao
 {
     internal static class FiscalConnectionFactory
     {
-        private const string FiscalDatabaseName = "mikos_fiscal_xk";
+        private const string FiscalDatabaseName = "MIKOS_FISCAL_XK";
         private const int DefaultMySqlPort = 3306;
 
         private static readonly object SyncRoot = new object();
